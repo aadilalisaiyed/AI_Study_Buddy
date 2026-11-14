@@ -1,0 +1,63 @@
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+.dashboard {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 100px 32px;
+}
+
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: #64748b;
+}
+
+h1 {
+  font-size: clamp(40px, 7vw, 72px);
+  letter-spacing: -0.05em;
+  margin: 20px 0;
+}
+
+.subtitle {
+  color: #64748b;
+  font-size: 18px;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 60px;
+}
+
+.status-card {
+  border: 1px solid #d1d5db;
+  padding: 32px;
+  border-radius: 4px;
+}
+
+.status-card span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.status-card h2 {
+  font-size: 28px;
+  margin: 20px 0;
+}
+
+footer {
+  margin-top: 80px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+@media (max-width: 600px) {
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+}
