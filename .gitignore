@@ -16,3 +16,7 @@ dist/
 # Editor
 .vscode/
 .idea/
+
+# Database archives
+*.dump
+*.backup

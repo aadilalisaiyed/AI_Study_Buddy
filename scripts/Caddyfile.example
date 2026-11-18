@@ -1,0 +1,23 @@
+# Example only. Set STUDY_PUBLIC_HOST and serve frontend/dist built with VITE_API_BASE_URL=/.
+{$STUDY_PUBLIC_HOST} {
+    request_body {
+        max_size 26MB
+    }
+    header {
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; worker-src 'self' blob:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=31536000"
+    }
+
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8000
+    }
+
+    handle {
+        root * {$STUDY_FRONTEND_DIST}
+        try_files {path} /index.html
+        file_server
+    }
+}

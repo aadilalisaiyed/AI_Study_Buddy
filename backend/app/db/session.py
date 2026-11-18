@@ -12,6 +12,7 @@ settings = get_settings()
 engine = create_engine(
     settings.database_url,
     pool_pre_ping=True,
+    hide_parameters=True,
     pool_size=5,
     max_overflow=10,
     connect_args={"connect_timeout": 5},

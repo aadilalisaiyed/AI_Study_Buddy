@@ -1,0 +1,16 @@
+.analytics-layout { display: grid; gap: 1.25rem; min-width: 0; }
+.analytics-layout .data-grid, .analytics-panel { min-width: 0; margin: 0; }
+.analytics-panel details { padding: .65rem 0; border-top: 1px solid #0f3f4926; }
+.analytics-panel summary { cursor: pointer; font-weight: 600; overflow-wrap: anywhere; }
+.analytics-filters { display: flex; flex-wrap: wrap; gap: .8rem; align-items: end; }
+.analytics-filters label { display: grid; gap: .25rem; }
+.analytics-filters input, .analytics-filters select { max-width: 100%; }
+.analytics-values { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); gap: 1rem; }
+.analytics-values dd { color: #0F3F49; margin: .2rem 0 0; font-size: 1.4rem; font-weight: 700; }
+.analytics-chart { width: 100%; min-width: 0; font-size: .75rem; color: #0F3F49; }
+.analytics-heatmap { display: grid; grid-template-columns: repeat(7, minmax(0, 2.1rem)); gap: .28rem; }
+.analytics-day { display: grid; place-items: center; aspect-ratio: 1; border-radius: .2rem; background: #ECE6DF; color: #0F3F49; font-size: .65rem; }
+.activity-1 { background: #e7bfbe; }
+.activity-2 { background: #b15c61; color: white; }
+.activity-3 { background: #93353a; color: white; }
+.activity-4 { background: #7F0508; color: white; }
