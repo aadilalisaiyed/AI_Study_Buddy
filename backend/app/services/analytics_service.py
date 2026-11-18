@@ -98,6 +98,7 @@ def report(db, owner, interval, offset, limit):
         Q.topic_key.label("key"), func.min(Q.topic).label("label"), *breakdown,
         func.max(a.submitted_at).label("last_practiced"), func.array_agg(func.distinct(Q.topic)).label("originals"),
     ).group_by(Q.topic_key)
+    topic_count = db.scalar(select(func.count()).select_from(topic_groups.subquery()))
     topic_order = (func.sum(V.earned_marks)*Decimal(1)/func.nullif(func.sum(V.max_marks), 0), Q.topic_key)
 
     def topics(query):
@@ -197,7 +198,7 @@ def report(db, owner, interval, offset, limit):
         score_change = round((sum(row["score"] for row in trend[-3:])-sum(row["score"] for row in trend[-6:-3]))/3, 1)
     return dict(
         range=dict(start=first, end=last, timezone=tz.key), overview=dict(attempts=num, quizzes=unique,
-            questions=answered, correct=correct, objective_questions=objective_n, objective_correct=objective_correct,
+            topic_count=topic_count, questions=answered, correct=correct, objective_questions=objective_n, objective_correct=objective_correct,
             accuracy=ratio(objective_correct, objective_n), mark_score=ratio(marks, maximum),
             average_score=round(float(average), 1) if average is not None else None, quiz_seconds=int(seconds or 0)),
         trend=trend, topics=topics(topic_groups.order_by(*topic_order).offset(offset).limit(limit)),

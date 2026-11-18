@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight, Asterisk, BookOpen, ChevronLeft, ChevronRight, Clock, Flame, LogOut, Menu, Target, Upload, X } from 'lucide-react'
 import DocumentLibrary from './DocumentLibrary'
 import { studyPages } from './studyPages'
+import { api } from './services/api'
 const QuizStudio = lazy(() => import('./QuizStudio'))
 const RevisionPlanner = lazy(() => import('./RevisionPlanner'))
 const LearningAnalytics = lazy(() => import('./LearningAnalytics'))
@@ -13,16 +14,16 @@ const demoMetrics = ['24', '84%', '18 hrs', '7']
 const ActivityPlot = lazy(() => import('./StudyCharts').then(module => ({ default: module.ProgressChart })))
 const MasteryPlot = lazy(() => import('./StudyCharts').then(module => ({ default: module.MasteryChart })))
 
-export function ProgressChart() {
-  return <Suspense fallback={<div className="chart" role="status">Loading study activity…</div>}><ActivityPlot /></Suspense>
+export function ProgressChart({ data } = {}) {
+  return <Suspense fallback={<div className="chart" role="status">Loading study activity…</div>}><ActivityPlot data={data} /></Suspense>
 }
 
 function MasteryChart() {
   return <Suspense fallback={<p role="status">Loading subject mastery…</p>}><MasteryPlot /></Suspense>
 }
 
-function Metrics({ demo }) {
-  return <div className="metric-grid">{metrics.map(([label, Icon], i) => <div key={label} className="panel metric"><Icon /><div><strong>{demo ? demoMetrics[i] : '—'}</strong><small>{label}</small></div></div>)}</div>
+function Metrics({ demo, values }) {
+  return <div className="metric-grid">{metrics.map(([label, Icon], i) => <div key={label} className="panel metric"><Icon /><div><strong>{demo ? demoMetrics[i] : values?.[i] ?? '—'}</strong><small>{!demo && i === 2 ? 'Quiz elapsed time' : label}</small></div></div>)}</div>
 }
 
 export function WorkspacePreview() {
@@ -83,17 +84,61 @@ export function CalendarPreview({ demo = false, sessions = [], timezone, onRange
   </div>
 }
 
-function Dashboard({ user }) {
+function Dashboard({ user, token, signOut }) {
   const [hour] = useState(() => new Date().getHours())
   const greeting = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening'
-  const [range, setRange] = useState('7 days')
+  const [days, setDays] = useState('7')
+  const [retry, setRetry] = useState(0)
+  const [result, setResult] = useState(null)
+  useEffect(() => {
+    const controller = new AbortController()
+    api.analytics(token, new URLSearchParams({ days, limit: 1 }), controller.signal)
+      .then(data => {
+        if (!controller.signal.aborted) setResult({ token, days, retry, data })
+      }).catch(error => {
+        if (!controller.signal.aborted) setResult({ token, days, retry, error })
+      })
+    return () => controller.abort()
+  }, [token, days, retry])
+  const active = result?.token === token && result.days === days && result.retry === retry ? result : null
+  const data = active?.data
+  const weakest = data?.weak_topics[0]
+  const upcoming = data?.revision.upcoming[0]
+  const activity = data?.activity.map(day => ({ date: day.date.slice(5), value: day.quizzes + day.tutor + day.revisions }))
+  const values = data && [
+    data.overview.topic_count, data.overview.accuracy == null ? '—' : data.overview.accuracy + '%',
+    Math.round(data.overview.quiz_seconds / 60) + ' min', data.consistency.current,
+  ]
+
   return <><div className="study-heading"><div><h1>Good {greeting}, {user.name.split(/\s+/)[0]}.</h1><p className="script">Let’s keep the momentum going.</p></div><Link className="button" to="/library"><Upload size={17} /> Document Library</Link></div>
-    <Metrics />
+    <Metrics values={values} />
+    {active?.error && <div className="panel data-panel" role="alert"><p>{active.error.message}</p>
+      <button className="button outline" onClick={active.error.status === 401 ? signOut : () => setRetry(value => value + 1)}>
+        {active.error.status === 401 ? 'Sign in again' : 'Retry'}
+      </button></div>}
     <div className="data-grid">
-      <section className="panel data-panel"><div className="calendar-header"><h2>Learning Progress</h2><select aria-label="Learning progress period" value={range} onChange={e => setRange(e.target.value)}>{['7 days', '30 days', '90 days'].map(value => <option key={value}>{value}</option>)}</select></div><p>Study activity for the last {range} will appear when progress tracking is connected.</p></section>
-      <section className="panel data-panel"><h2>Subject Mastery</h2><p>Subject performance will appear after quiz tracking is connected.</p></section>
-      <section className="panel data-panel"><h2>Continue Learning</h2><p>Start with a topic or explore the Library.</p><Link to="/chat">Open the AI Tutor <ArrowRight size={14} /></Link></section>
-      <section className="panel data-panel"><h2>Upcoming Revision</h2><p>Review your scheduled study sessions.</p><Link to="/calendar">Open the planner <ArrowRight size={14} /></Link></section>
+      <section className="panel data-panel">
+        <div className="calendar-header"><h2>Learning Progress</h2><select aria-label="Learning progress period" value={days}
+          onChange={event => setDays(event.target.value)}>{['7', '30', '90'].map(value => <option value={value} key={value}>{value} days</option>)}</select></div>
+        {!active ? <p role="status">Loading study activity…</p> : data && (activity.some(day => day.value)
+          ? <ProgressChart data={activity} /> : <p>No study activity recorded in this period.</p>)}
+      </section>
+      <section className="panel data-panel"><h2>Subject Performance</h2>
+        {data && (data.subjects.length ? <ul>{data.subjects.map(subject =>
+          <li key={subject.label}>{subject.label} · {subject.average_score == null ? '—' : subject.average_score + '%'} average quiz score</li>
+        )}</ul> : <p>Complete a quiz to see subject performance.</p>)}
+        <Link to="/analytics">View analytics <ArrowRight size={14} /></Link>
+      </section>
+      <section className="panel data-panel"><h2>Continue Learning</h2>
+        {weakest ? <p>Practice {weakest.label}.</p> : <p>Start with a topic or explore the Library.</p>}
+        {weakest ? <Link to={'/quizzes?topic=' + encodeURIComponent(weakest.label)}>Practice topic <ArrowRight size={14} /></Link>
+          : <Link to="/chat">Open the AI Tutor <ArrowRight size={14} /></Link>}
+      </section>
+      <section className="panel data-panel"><h2>Upcoming Revision</h2>
+        {data && (upcoming ? <p><Link to={'/calendar?session=' + upcoming.id}>{upcoming.title}</Link> · {new Date(upcoming.start_at)
+          .toLocaleString(undefined, { timeZone: data.range.timezone, dateStyle: 'medium', timeStyle: 'short' })}</p> : <p>No upcoming revision sessions.</p>)}
+        <Link to="/calendar">Open the planner <ArrowRight size={14} /></Link>
+      </section>
     </div>
   </>
 }
@@ -116,7 +161,7 @@ function StudyContent({ path, user, token, signOut }) {
     case '/analytics': return <Suspense fallback={<p role="status">Loading analytics…</p>}><LearningAnalytics token={token} signOut={signOut} /></Suspense>
     case '/calendar': return <Suspense fallback={<p role="status">Loading Revision Planner…</p>}><RevisionPlanner token={token} signOut={signOut} /></Suspense>
     case '/settings': return <SettingsPage user={user} signOut={signOut} />
-    default: return <Dashboard user={user} />
+    default: return <Dashboard user={user} token={token} signOut={signOut} />
   }
 }
 

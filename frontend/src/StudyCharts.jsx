@@ -6,9 +6,10 @@ const mastery = [
   { name: 'Database Systems', value: 78, color: '#b76366' }, { name: 'AI / ML', value: 76, color: '#be9c8c' },
 ]
 
-export function ProgressChart() {
-  return <div className="chart" role="group" aria-label="Illustrative study activity rises from 12 to 69 minutes between October 15 and 28."><ResponsiveContainer width="100%" height="100%" minWidth={0}><AreaChart data={chartData} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
-    <CartesianGrid vertical={false} stroke="#d8d0c7" strokeDasharray="3 4" /><XAxis dataKey="date" minTickGap={28} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} /><YAxis width={28} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} /><Tooltip formatter={value => [value + ' min', 'Study time']} /><Area dataKey="value" type="monotone" stroke="#7f0508" strokeWidth={2} fill="#e5c6c3" isAnimationActive={false} />
+export function ProgressChart({ data }) {
+  const demo = !data
+  return <div className="chart" role="group" aria-label={demo ? "Illustrative study time" : "Daily quiz, Tutor, and completed revision activity"}><ResponsiveContainer width="100%" height="100%" minWidth={0}><AreaChart data={data || chartData} margin={{ left: 0, right: 12, top: 8, bottom: 0 }}>
+    <CartesianGrid vertical={false} stroke="#d8d0c7" strokeDasharray="3 4" /><XAxis dataKey="date" minTickGap={28} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} /><YAxis allowDecimals={false} width={28} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} /><Tooltip formatter={value => demo ? [value + ' min', 'Study time'] : [value, 'Recorded activities']} /><Area dataKey="value" type="monotone" stroke="#7f0508" strokeWidth={2} fill="#e5c6c3" isAnimationActive={false} />
   </AreaChart></ResponsiveContainer></div>
 }
 
