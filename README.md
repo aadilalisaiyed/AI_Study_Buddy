@@ -36,6 +36,33 @@
 | Data | PostgreSQL, private Supabase Storage, ChromaDB |
 | AI & integrations | Gemini, PyMuPDF, Model Context Protocol, Google Calendar OAuth |
 
+## 🏗️ Architecture
+
+```mermaid
+flowchart TD
+    Browser["Frontend · React, Vite, Tailwind CSS, Recharts"]
+    API["Backend REST API · Python, FastAPI"]
+    DB[("PostgreSQL · accounts, documents, quizzes, revision sessions")]
+    Storage[("Supabase Storage · private PDFs")]
+    Vectors[("ChromaDB · PDF chunk embeddings")]
+    Worker["Document worker · Python, PyMuPDF"]
+    Gemini["Google Gemini · embeddings and generation"]
+    MCP["Planner tools · Python MCP SDK"]
+    Calendar["Google Calendar API · OAuth 2.0"]
+
+    Browser -->|"HTTPS or local HTTP · JWT"| API
+    API -->|"SQLAlchemy · Alembic migrations"| DB
+    API -->|"Store and retrieve PDFs"| Storage
+    DB -->|"Queued PDF jobs"| Worker
+    Worker -->|"Read and verify PDFs"| Storage
+    Worker -->|"Embed PDF chunks"| Gemini
+    Worker -->|"Index chunks with page references"| Vectors
+    API -->|"Retrieve relevant PDF chunks"| Vectors
+    API -->|"Generate Tutor answers and quizzes"| Gemini
+    API -->|"Invoke Planner tools"| MCP
+    MCP -->|"Sync approved event changes"| Calendar
+```
+
 ## 🚀 Run Locally
 
 You'll need Python, Node.js with npm, and Docker Compose.
